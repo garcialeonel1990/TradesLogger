@@ -359,13 +359,16 @@ export default async function handler(req, res) {
         let telegramSent = false;
         let telegramSilenced = false;
         let debeNotificar = false;
-        let razon = 'Telegram no configurado';
+        let razon = '';
         let config = null;
         let stopInfo = null;
         let telegramReadError = null;
         let telegramSendError = null;
         let telegramNotificationError = null;
         const telegramConfigured = Boolean(process.env.TELEGRAM_TOKEN && process.env.TELEGRAM_CHAT_ID);
+        if (!telegramConfigured) {
+            razon = 'Telegram no configurado';
+        }
         const esPrimeraDelDia = Object.keys(lecturasAnteriores).length === 0;
 
         // Actualizar máximos del día
