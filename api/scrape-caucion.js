@@ -422,10 +422,10 @@ export default async function handler(req, res) {
                             
                             console.log(`[Scraper API] 📊 ${caucion.tipo}: ${lecturaAnterior.tasa}% → ${caucion.tasa}% (variación: ${variacionAbsoluta.toFixed(2)}pp, ${variacionPorcentual.toFixed(2)}%)`);
                             
-                            if (variacionAbsoluta >= config.umbral) {
+                            if (variacionPorcentual >= config.umbral) {
                                 debeNotificar = true;
                                 const direccion = caucion.tasa > lecturaAnterior.tasa ? '↗️' : '↘️';
-                                const nuevaRazon = `${caucion.tipo} ${direccion} ${variacionAbsoluta.toFixed(2)}pp (${lecturaAnterior.tasa}% → ${caucion.tasa}%)`;
+                                const nuevaRazon = `${caucion.tipo} ${direccion} ${variacionAbsoluta.toFixed(2)}pp / ${variacionPorcentual.toFixed(2)}% (${lecturaAnterior.tasa}% → ${caucion.tasa}%)`;
                                 razon = razon ? `${razon}\n${nuevaRazon}` : nuevaRazon;
                             }
                         } else {
