@@ -19,6 +19,7 @@ const TICKER_CATEGORY_LABELS = {
     adr: 'ADR',
     otros: 'Otros'
 };
+const ADMIN_EMAIL = 'garcialeonel1990@gmail.com';
 
 const ARGENTINA_TICKER_SET = new Set([
     'BBAR',
@@ -99,6 +100,10 @@ function renderTickerTypeBadge(category) {
     return `<span class="ticker-type-badge ticker-type-${category}">${label}</span>`;
 }
 
+function isCurrentUserAdmin() {
+    return window.firebaseAuth?.currentUser?.email === ADMIN_EMAIL;
+}
+
 /**
  * Cargar tickers desde Firestore con cache
  */
@@ -153,6 +158,10 @@ export async function loadTickersFromFirestore() {
  */
 export async function addTicker(ticker, nombre, ratio, tickerUsa) {
     try {
+        if (!isCurrentUserAdmin()) {
+            throw new Error('Solo el administrador puede modificar tickers');
+        }
+
         const db = window.firebaseDb;
         const tickersRef = collection(db, TICKERS_COLLECTION);
         
@@ -199,6 +208,10 @@ export async function addTicker(ticker, nombre, ratio, tickerUsa) {
  */
 export async function deleteTicker(tickerId) {
     try {
+        if (!isCurrentUserAdmin()) {
+            throw new Error('Solo el administrador puede modificar tickers');
+        }
+
         const db = window.firebaseDb;
         const tickerRef = doc(db, TICKERS_COLLECTION, tickerId);
         
@@ -224,6 +237,10 @@ export async function deleteTicker(tickerId) {
  */
 export async function updateTicker(tickerId, updates) {
     try {
+        if (!isCurrentUserAdmin()) {
+            throw new Error('Solo el administrador puede modificar tickers');
+        }
+
         const db = window.firebaseDb;
         const tickerRef = doc(db, TICKERS_COLLECTION, tickerId);
         
@@ -259,6 +276,7 @@ export async function updateTicker(tickerId, updates) {
  */
 export function renderTickersTable() {
     const tbody = document.getElementById('tickersTableBody');
+    const isAdmin = isCurrentUserAdmin();
     
     if (!tbody) return;
     
@@ -294,12 +312,14 @@ export function renderTickersTable() {
                         <td>${ticker.tickerUsa || '-'}</td>
                         <td>${ticker.ratio}</td>
                         <td>
-                            <button class="btn-edit" data-id="${ticker.id}" title="Editar">
-                                ✏️
-                            </button>
-                            <button class="btn-delete" data-id="${ticker.id}" title="Eliminar">
-                                🗑️
-                            </button>
+                            ${isAdmin ? `
+                                <button class="btn-edit" data-id="${ticker.id}" title="Editar">
+                                    ✏️
+                                </button>
+                                <button class="btn-delete" data-id="${ticker.id}" title="Eliminar">
+                                    🗑️
+                                </button>
+                            ` : '-'}
                         </td>
                     </tr>
                 `).join('')}
@@ -360,6 +380,9 @@ export function initTickersModal() {
     // Abrir modal
     manageTickers?.addEventListener('click', async () => {
         setTickersModalState(modal, true);
+        if (addForm) {
+            addForm.hidden = !isCurrentUserAdmin();
+        }
         await loadTickersFromFirestore();
         renderTickersTable();
     });
@@ -385,6 +408,11 @@ export function initTickersModal() {
     // Agregar/Editar ticker
     addForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (!isCurrentUserAdmin()) {
+            alert('Solo el administrador puede modificar tickers');
+            return;
+        }
         
         const ticker = document.getElementById('newTicker').value.trim().toUpperCase();
         const nombre = document.getElementById('newNombre').value.trim();

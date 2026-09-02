@@ -246,7 +246,8 @@ npm run dev
 
 ## 🔐 Seguridad
 
-- ✅ Autenticación requerida para trades y tickers
+- ✅ Autenticación requerida para trades y lectura de tickers
+- ✅ Escritura de tickers restringida al usuario admin
 - ✅ Reglas de Firestore restrictivas por usuario
 - ✅ Cauciones: lectura pública, escritura solo via service account
 - ✅ CORS habilitado en serverless functions

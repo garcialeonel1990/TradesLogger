@@ -37,7 +37,8 @@ tickers/{document=**}
 
 Reglas actuales:
 
-- Lectura y escritura permitidas para usuarios autenticados.
+- Lectura permitida para usuarios autenticados.
+- Escritura permitida solo al usuario admin.
 - La lista de tickers funciona como catalogo compartido de la app.
 
 ### `bullrun`
