@@ -1,0 +1,26 @@
+{
+  "name": "tradeslogger",
+  "version": "2.0.0",
+  "description": "Sistema de tracking de inversiones con CEDEARs y monitoreo de cauciones",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "build": "node scripts/generate-version.js",
+    "cedear:usd": "python3 scripts/cedear_usd_price.py",
+    "cedear:audit-prices": "python3 scripts/audit_cedear_trade_prices.py",
+    "cedear:sync-master": "python3 scripts/sync_cedears_master.py",
+    "cedear:backfill-trades": "python3 scripts/backfill_trade_ticker_usa.py",
+    "deploy": "vercel deploy --prod"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "jsdom": "^23.0.0",
+    "node-fetch": "^2.7.0"
+  },
+  "keywords": ["trading", "cedear", "caucion", "finance", "firebase"],
+  "author": "Leonel Garcia",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leonelgarcia/tradeslogger"
+  }
+}

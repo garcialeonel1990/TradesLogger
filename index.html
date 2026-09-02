@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mis Trades</title>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='80' fill='%2310b981'>$</text></svg>">
+    <link rel="apple-touch-icon" id="appleTouchIcon">
+    <link rel="stylesheet" href="src/styles/styles.css">
+    <script src="src/js/apple-touch-icon.js" defer></script>
+
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <h1>My Trades</h1>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Usuario:</label>
+                    <input type="text" id="email" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+                
+                <div id="loginError" class="login-error"></div>
+                
+                <button type="submit" class="btn-primary" id="loginBtn">Iniciar Sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Aplicación Principal (oculta inicialmente) -->
+    <div id="mainApp" class="container" style="display: none;">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1></h1>
+                </div>
+                <div class="header-actions">
+                    <button id="refreshBtn" class="btn-refresh" title="Actualizar">🔄</button>
+                    <div class="user-dropdown">
+                        <button class="user-button" id="userButton">
+                            👤 <span id="userName"></span> ▾
+                        </button>
+                        <div class="user-menu" id="userMenu">
+                            <button id="manageTickers" class="user-menu-item">
+                                📊 <span class="ticker-btn-text"><span class="desktop-only">Administrar </span>Tickers</span>
+                            </button>
+                            <button id="logoutBtn" class="user-menu-item">
+                                🚪 Cerrar sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navegación por pestañas -->
+        <nav class="tabs-nav">
+            <button class="tab-btn" data-tab="new-trade">Cargar Trade</button>
+            <button class="tab-btn" data-tab="dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="mis-trades">Mis Trades</button>
+            <button class="tab-btn" data-tab="open-trades">Operaciones</button>
+            <button class="tab-btn" data-tab="cauciones">Cauciones</button>
+            <button class="tab-btn" data-tab="crypto">Crypto</button>
+        </nav>
+
+        <!-- Pestaña: Cargar Trade -->
+        <section id="new-trade" class="tab-content form-section">
+            <h2>Agregar Nuevo Trade</h2>
+            <form id="tradeForm">
+                <div class="form-group">
+                    <label for="fecha">Fecha:</label>
+                    <input type="date" id="fecha" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="hora">Hora (ARG):</label>
+                    <select id="hora" required style="font-size: 16px; padding: 12px;">
+                        <option value="">Seleccionar hora...</option>
+                    </select>
+                    <small style="color: #666; font-size: 0.85rem;">Horario del mercado: 11:00 - 18:00 hs (Argentina)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="ticker">Ticker:</label>
+                    <input type="text" id="ticker" list="tickerList" placeholder="Buscar ticker..." autocomplete="off" required>
+                    <datalist id="tickerList">
+                    </datalist>
+                    <small id="tickerName" style="color: #2196F3; font-weight: bold; font-size: 0.9rem; display: none;"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="cantidad">Cantidad:</label>
+                    <input type="number" id="cantidad" step="" placeholder="" required>
+                </div>
+
+                <div class="form-group" id="precioGroup" style="display: none;">
+                    <label for="precioDisplay">Precio (USD):</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="text" id="precioDisplay" readonly style="background: #f5f5f5; cursor: not-allowed;" placeholder="Cargando...">
+                        <span id="precioStatus"></span>
+                    </div>
+                    <input type="hidden" id="precioManual">
+                    <small id="precioInfo" style="color: #666; font-size: 0.85rem;"></small>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <div class="tipo-buttons">
+                        <button type="button" class="btn-tipo btn-compra" data-tipo="Compra">Compra</button>
+                        <button type="button" class="btn-tipo btn-venta" data-tipo="Venta">Venta</button>
+                    </div>
+                    <input type="hidden" id="tipo" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Guardar Trade</button>
+            </form>
+
+            <div class="iol-import-panel">
+                <div class="iol-import-header">
+                    <div>
+                        <h3>Importar IOL</h3>
+                        <p>Subí el archivo histórico de IOL y revisá cada operación antes de guardar o actualizar.</p>
+                    </div>
+                    <button id="toggleIolImport" class="btn-secondary" type="button">Abrir importador</button>
+                </div>
+
+                <div id="iolImportBody" class="iol-import-body" style="display: none;">
+                    <div class="iol-file-row">
+                        <div class="iol-file-heading">
+                            <label for="iolImportFile">Archivo IOL</label>
+                            <span>.xls, .html o .csv</span>
+                        </div>
+                        <div class="iol-file-picker">
+                            <input id="iolImportFile" class="iol-file-input" type="file" accept=".xls,.html,.htm,.csv,.txt,text/html,text/csv,text/plain">
+                            <label class="iol-file-button" for="iolImportFile">Seleccionar archivo</label>
+                            <span id="iolImportFileName" class="iol-file-name">Ningún archivo seleccionado</span>
+                        </div>
+                    </div>
+                    <textarea id="iolImportText" class="iol-import-textarea" hidden></textarea>
+                    <div class="iol-import-actions">
+                        <button id="previewIolImport" class="btn-primary" type="button">Vista previa</button>
+                    </div>
+                    <div id="iolImportStatus" class="iol-import-status"></div>
+                    <div id="iolImportPreview" class="iol-import-preview"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pestaña: Mis Trades (Operaciones) -->
+        <section id="open-trades" class="tab-content trades-section">
+            <div class="section-header">
+                <h2>Operaciones</h2>
+                <button id="exportTradesCsvBtn" class="btn-export-csv" type="button" title="Descargar operaciones en CSV">
+                    Descargar CSV
+                </button>
+            </div>
+            
+            <div id="loading" class="loading">Cargando...</div>
+            <div id="error" class="error"></div>
+            
+            <div id="tradesContainer" class="trades-container">
+                <!-- Los trades se cargarán aquí dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Pestaña: Dashboard -->
+        <section id="dashboard" class="tab-content trades-section">
+            <div id="dashboardContent" class="dashboard-content">
+                <p style="text-align: center; color: #999; padding: 60px 20px;">
+                    📈 Cargando estadísticas...
+                </p>
+            </div>
+        </section>
+
+        <!-- Pestaña: Mis Trades -->
+        <section id="mis-trades" class="tab-content trades-section">
+            <div class="section-header">
+                <h2>Mis Trades</h2>
+            </div>
+            
+            <div id="misTradesContent" class="dashboard-content">
+                <p style="text-align: center; color: #999; padding: 60px 20px;">
+                    📊 Contenido próximamente...
+                </p>
+            </div>
+        </section>
+
+        <!-- Pestaña: Cauciones -->
+        <section id="cauciones" class="tab-content">
+            <div class="form-section">
+                <h2>📊 Dashboard de Cauciones</h2>
+                
+                <!-- Tasas Actuales (Tiempo Real) -->
+                <div style="margin-bottom: 30px;">
+                    <h3>📡 Tasas en Tiempo Real</h3>
+                    <div id="tasasActuales" class="stats-grid" style="grid-template-columns: 1fr;">
+                        <div id="tasaActualCard" class="stat-card caucion-stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div id="tasaActualLabel" class="stat-label">Caución T1 (Lun-Jue)</div>
+                            <div id="tasaActual" class="stat-value">--%</div>
+                            <div id="fechaActual" class="stat-label">Cargando...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>📈 Estadísticas Históricas</h3>
+
+                <div class="stats-grid">
+                    <div class="stat-card caucion-stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="stat-label">Récord Histórico</div>
+                        <div id="recordMax" class="stat-value">--%</div>
+                        <div id="recordFecha" class="stat-label">Cargando...</div>
+                    </div>
+                    
+                    <div class="stat-card caucion-stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <div class="stat-label">Promedio Máximos</div>
+                        <div id="promedioMax" class="stat-value">--%</div>
+                        <div class="stat-label">Últimos 7 días</div>
+                    </div>
+                    
+                    <div class="stat-card caucion-stat-card" style="background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);">
+                        <div class="stat-label">Hora más frecuente</div>
+                        <div id="horaMasFrecuente" class="stat-value">--:--</div>
+                        <div class="stat-label">De picos máximos</div>
+                    </div>
+                    
+                    <div class="stat-card caucion-stat-card" style="background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);">
+                        <div class="stat-label">Total de días</div>
+                        <div id="totalDias" class="stat-value">--</div>
+                        <div class="stat-label">Registrados</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 35px;">
+                    <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📈 Distribución de Picos por Hora</h3>
+                    <div id="hourChart" class="loading" style="text-align: center; padding: 40px; color: #666;">Cargando datos...</div>
+                </div>
+                
+                <div style="margin-top: 35px;">
+                    <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📅 Historial de Máximos Diarios</h3>
+                    <div id="historyTable" class="loading" style="text-align: center; padding: 40px; color: #666;">Cargando datos...</div>
+                </div>
+                
+                <!-- Botón de configuración -->
+                <div class="caucion-actions" style="margin-top: 40px; margin-bottom: 20px;">
+                    <button id="toggleCaucionConfig" class="btn-primary">
+                        ⚙️ Configuración de Notificaciones
+                    </button>
+                    <button id="downloadTelegramLogs" class="btn-secondary btn-caucion-log" type="button">
+                        Descargar logs Telegram
+                    </button>
+                </div>
+                <div id="telegramLogsStatus" class="caucion-log-status"></div>
+                
+                <!-- Panel de configuración (oculto por defecto) -->
+                <div id="caucionConfigPanel" style="display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
+                    <h3>⚙️ Configuración de Notificaciones por Telegram</h3>
+                    
+                    <div style="margin: 20px 0; padding: 20px; background: white; border-radius: 12px; border-left: 4px solid #667eea;">
+                        <label class="caucion-config-label">
+                            <input type="radio" name="caucionModo" value="siempre">
+                            <div>
+                                <div class="label-title">Enviar siempre</div>
+                                <div class="label-desc">Recibir notificación cada vez que se ejecute el scraper</div>
+                            </div>
+                        </label>
+                        
+                        <label class="caucion-config-label">
+                            <input type="radio" name="caucionModo" value="variacion" checked>
+                            <div>
+                                <div class="label-title">Solo si varía</div>
+                                <div class="label-desc">Recibir notificación solo si la tasa varió respecto a la última lectura</div>
+                            </div>
+                        </label>
+                        
+                        <div class="caucion-umbral-container">
+                            <p style="margin: 0 0 15px 0; font-weight: bold;">Umbral de variación:</p>
+                            <div class="caucion-umbral-options">
+                                <label class="caucion-umbral-label">
+                                    <input type="radio" name="umbral" value="1" checked>
+                                    <span>≥1%</span>
+                                </label>
+                                <label class="caucion-umbral-label">
+                                    <input type="radio" name="umbral" value="3">
+                                    <span>≥3%</span>
+                                </label>
+                                <label class="caucion-umbral-label">
+                                    <input type="radio" name="umbral" value="5">
+                                    <span>≥5%</span>
+                                </label>
+                                <label class="caucion-umbral-label">
+                                    <input type="radio" name="umbral" value="10">
+                                    <span>≥10%</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="saveCaucionConfig" class="btn-primary">Guardar Configuración</button>
+                    <div id="caucionConfigStatus"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pestaña: Crypto -->
+        <section id="crypto" class="tab-content crypto-dashboard">
+            <div class="crypto-portfolio-header">
+                <div>
+                    <div class="crypto-title-row">
+                        <h2>Mi portafolio</h2>
+                        <button id="cryptoRefreshBtn" class="btn-refresh crypto-icon-btn" title="Actualizar precios" aria-label="Actualizar precios">🔄</button>
+                    </div>
+                    <p id="cryptoLastUpdate">Precios pendientes de actualización</p>
+                </div>
+                <div class="crypto-header-actions">
+                    <button type="button" id="cryptoNewOperationBtn" class="crypto-primary-action" aria-expanded="false" aria-controls="cryptoOperationPanel">+ Nueva operación</button>
+                </div>
+            </div>
+
+            <div id="cryptoIndicadores" class="crypto-dashboard-content">
+                <p class="crypto-empty-state">Cargando indicadores...</p>
+            </div>
+
+            <div id="cryptoOperationPanel" class="form-section crypto-operation-panel" style="display: none;" aria-hidden="true">
+                <div class="crypto-panel-header">
+                    <div>
+                        <h2>Nueva operación</h2>
+                        <p>Registrá compras o ventas sin cambiar tu metodología actual.</p>
+                    </div>
+                    <button type="button" id="cryptoOperationCloseBtn" class="crypto-close-btn" aria-label="Cerrar nueva operación">×</button>
+                </div>
+                <form id="cryptoForm" class="crypto-form-grid">
+                    <div class="form-group crypto-type-field">
+                        <label>Tipo:</label>
+                        <div class="tipo-buttons" id="cryptoTipoButtons">
+                            <button type="button" class="btn-tipo btn-compra active" data-tipo="Compra">Compra</button>
+                            <button type="button" class="btn-tipo btn-venta" data-tipo="Venta">Venta</button>
+                        </div>
+                        <input type="hidden" id="cryptoTipo" value="Compra">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cryptoMoneda">Cripto:</label>
+                        <select id="cryptoMoneda" required>
+                            <option value="">Seleccionar cripto...</option>
+                            <option value="BTC">BTC</option>
+                            <option value="HYPE">HYPE</option>
+                            <option value="SOL">SOL</option>
+                        </select>
+                        <small id="cryptoTenencia" class="crypto-tenencia-note" style="display: none;"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cryptoFecha">Fecha:</label>
+                        <input type="date" id="cryptoFecha" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cryptoPrecio" id="cryptoPrecioLabel">Precio de compra (USD):</label>
+                        <input type="number" id="cryptoPrecio" step="any" min="0" placeholder="Ej: 65000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cryptoCantidad" id="cryptoCantidadLabel">Cantidad obtenida:</label>
+                        <input type="number" id="cryptoCantidad" step="any" min="0" placeholder="Ej: 0.05" required>
+                    </div>
+
+                    <div class="form-group crypto-submit-field">
+                        <label aria-hidden="true">&nbsp;</label>
+                        <button type="submit" class="btn-primary" id="cryptoSubmitBtn">Cargar Compra</button>
+                    </div>
+                    <div id="cryptoStatus" class="crypto-status"></div>
+                </form>
+            </div>
+
+            <div class="crypto-history-stack">
+                <div class="form-section crypto-accordion">
+                    <button id="toggleCryptoVentas" class="crypto-accordion-trigger" type="button" aria-expanded="false" aria-controls="cryptoVentasPanel">
+                        <span>Trades cerrados</span>
+                        <span class="crypto-accordion-meta">
+                            <span class="crypto-accordion-count" id="cryptoVentasCount"></span>
+                            <span class="crypto-chevron" aria-hidden="true">⌄</span>
+                        </span>
+                    </button>
+                    <div id="cryptoVentasPanel" class="crypto-accordion-panel" style="display: none;">
+                        <p class="crypto-empty-state">Cargando trades cerrados...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer con información de versión -->
+        <footer id="appFooter" style="margin-top: 40px; padding: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #888; background: #f9f9f9; border-radius: 8px;">
+            <span id="versionText">📦 Cargando versión...</span>
+        </footer>
+    </div>
+
+    <!-- Cargar configuración primero -->
+    <!-- Modal de Administración de Tickers -->
+    <div id="tickersModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Tickers</h2>
+                <button class="modal-close" id="closeTickersModal">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario para agregar ticker -->
+                <form id="addTickerForm" class="ticker-form">
+                    <div class="form-row">
+                        <input type="text" id="newTicker" placeholder="Ticker (ej: AAPL)" required maxlength="10">
+                        <input type="text" id="newNombre" placeholder="Nombre completo" required>
+                        <input type="text" id="newTickerUsa" placeholder="Ticker USA (ej: AAPL)" required maxlength="10">
+                        <input type="number" id="newRatio" placeholder="Ratio" step="0.01" value="1" required min="0.01">
+                        <button type="submit" class="btn-add">Agregar Ticker</button>
+                    </div>
+                </form>
+
+                <!-- Tabla de tickers -->
+                <div class="tickers-table-container">
+                    <table class="tickers-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Ticker USA</th>
+                                <th>Ratio</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tickersTableBody">
+                            <tr>
+                                <td colspan="6" class="loading-row">Cargando tickers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración pública -->
+    <script src="src/config/config-public.js"></script>
+    
+    <!-- Firebase SDK - Inicialización consolidada -->
+    <script type="module" src="src/js/auth/firebase-init.js"></script>
+    <script type="module" src="src/js/auth/firebase-auth.js"></script>
+    <script src="src/js/script.js" type="module"></script>
+
+    <!-- Cargar información de versión en el footer de la aplicación -->
+    <script src="src/js/version-info.js"></script>
+</body>
+</html>
